@@ -6,7 +6,7 @@ A simple Python module to provide a wrapper for some of the basic functionality 
 Please note this module is in very early stages of development and probably will not work in some cases.
 
 **Prerequisites:**
-* weakpy.py (from this repo)
+* wekapy.py (from this repo)
 * Working Python installation
 * Working Java installation
 * weka.jar
@@ -33,8 +33,8 @@ The module can be very easily used as shown in the following example. The functi
 from wekapy import *
 
 model = Model(classifier_type = "trees.J48")
-model.train(data_file = "train.arff")
-model.test(test_set = "test.arff")
+model.train(training_file = "train.arff")
+model.test(test_file = "test.arff")
 ```
 
 The list of predictions can then be retrieved like so:
@@ -105,17 +105,17 @@ feature2 = Feature(name="is_sunny",value=True,possible_values="{False, True}")
 feature3 = Feature(name="boys_in_yard",value=True,possible_values="{False ,True}") 
 ```
 
-Next, create an Instance object and append your features. The final feature will be the that predictions are made against:
+Next, create an Instance object and append your features. The final feature will be the that predictions are made against (the 'class'):
 ```python
 instance1 = Instance([feature1, feature2, feature3, ...])
 ```
 
-Finally, pass a list of Instances to the `train()` method:
+Finally, pass a list of these Instances to the `train()` method:
 ```python
 model.train(instances = [instance1, instance2, ...])
 ```
 
-In the background, WekaPy generates an ARFF file and saves this and the trained model in its data directories. These can be found using:
+In the background, WekaPy generates an ARFF file and saves this and the trained model in its data directories. If desired, these can be found using:
 ```python
 training_arff = model.training_file
 trained_model = model.model_file
@@ -124,10 +124,10 @@ trained_model = model.model_file
 **Optional arguments**
 
 To configure the training more precisely, you can also set a different directory for the model and specify the number of cross-validation folds the training algorithm will carry out:
-* `save_as`
-    * Set `save_as = "path/to/model"` to save the model in a different directory and with your own name
+* `save_as` (hidden, by default, to improve seamlessness of use)
+    * Set `save_as = "path/to/model"` to save the model in a different directory and with your own name.
     * This saved model can then be used later by passing it to the `test()` method as described later.
-* `folds` (10 by default)
+* `folds` (`10` by default)
     * Set `folds = x` to specify the number of cross-validation folds you want the algorithm to carry out.
     * If your Instance list is short, you may need to reduce this.
 
@@ -146,7 +146,7 @@ model.test(test_file = "test.arff")
 
 **Using a list of Instances**
 
-Generate a list of Instances as described earlier. When testing, if the outcome feature is unknown, then use a "?" to signify this. For example:
+Generate a list of Instances as described earlier. When testing, if the outcome feature is unknown, then use a `"?"` to signify this. For example:
 ```python
 test_feature1 = Feature(name="num_milkshakes",value=5,possible_values="real")
 test_feature2 = Feature(name="is_sunny",value=False,possible_values="{False, True}")
@@ -158,9 +158,8 @@ As before, an ARFF file is generated and this is used to test against the model.
 
 **Optional arguments**
 
-You can specify the use of a different model for testing against, and thus skip out the `train()` section, if you desire. This could be useful if you have already used `train()` and chose to save the model elsewhere or if you have trained the model using Weka's GUI, and so on.
-
-*`model_file` (`None` by default)
+You can specify the use of a different model for testing against, and thus skip out the `train()` section, if you desire. This could be useful if you have already used `train()` and chose to save the model elsewhere, you have trained the model using Weka's GUI, using someone else's model, etc.
+* `model_file` (`None` by default)
     * Set `model_file = "path/to/model.model"` to test with this model instead. 
     * Any models trained previously will be discarded by the current `Model` object and replaced by this one.
 
@@ -168,19 +167,19 @@ You can specify the use of a different model for testing against, and thus skip 
 Accessing the predictions
 --------------------------
 
-If the testing is successful, a list of Predictions will be generated, containg a Prediction object for each Instance in the test ARFF file or the list of test Instances.
+If the testing is successful, a list of Predictions will be generated, containing a Prediction object for each Instance in the test ARFF file or the list of test Instances.
 
-Below is an example of accessing the Predictions:
+Below is an example demonstrating how to access the Predictions:
 ```python
 predictions = model.predictions
 for prediction in predictions:
-    print predictions
+    print prediction
 ```
 
 **Further information**
 
 For each Prediction object, these fields are available:
-* `index` - integer representing the number of that Prediction. This equates to that Instance in the test Instance set or ARFF file.
+* `index` - integer representing the number of that Prediction. This equates to that Instance in the test Instance set or ARFF file. For example, the Prediction with `index = 1` is the prediction for the *first* instance in the test set.
 * `observed_category` - integer representing the category number of the observed value (will not be available if observed value is unknown)
 * `observed_value` - the observed outcome feature for this Instance
 * `predicted_category` - integer representing the category number of the predicted value
