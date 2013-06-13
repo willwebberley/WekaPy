@@ -83,6 +83,8 @@ Training the model
 Currently, there are two methods for training the model - either through ARFF files or by providing a list of instances.
 Both require the `Model` object to be instantiated first (see above).
 
+When training the model, any models trained previously with this `Model` object will be replaced by the new model.
+
 You will need to provide either an ARFF file or a list of Instances in order for the train to be successful.
 
 **Using ARFF Files**
@@ -132,3 +134,56 @@ To configure the training more precisely, you can also set a different directory
 
 Testing with the trained model
 --------------------------------
+
+As with the training, there are two methods for testing with the model. You must provide either an ARFF file or a list of Instances for the testing to be successful.
+
+**Using ARFF files**
+
+Test using your own ARFF file as follows:
+```python
+model.test(test_file = "test.arff")
+```
+
+**Using a list of Instances**
+
+Generate a list of Instances as described earlier. When testing, if the outcome feature is unknown, then use a "?" to signify this. For example:
+```python
+test_feature1 = Feature(name="num_milkshakes",value=5,possible_values="real")
+test_feature2 = Feature(name="is_sunny",value=False,possible_values="{False, True}")
+test_feature3 = Feature(name="boys_in_yard",value="?",possible_values="{False, True}")
+```
+
+As before, an ARFF file is generated and this is used to test against the model.
+
+
+**Optional arguments**
+
+You can specify the use of a different model for testing against, and thus skip out the `train()` section, if you desire. This could be useful if you have already used `train()` and chose to save the model elsewhere or if you have trained the model using Weka's GUI, and so on.
+
+*`model_file` (`None` by default)
+    * Set `model_file = "path/to/model.model"` to test with this model instead. 
+    * Any models trained previously will be discarded by the current `Model` object and replaced by this one.
+
+
+Accessing the predictions
+--------------------------
+
+If the testing is successful, a list of Predictions will be generated, containg a Prediction object for each Instance in the test ARFF file or the list of test Instances.
+
+Below is an example of accessing the Predictions:
+```python
+predictions = model.predictions
+for prediction in predictions:
+    print predictions
+```
+
+**Further information**
+
+For each Prediction object, these fields are available:
+* `index` - integer representing the number of that Prediction. This equates to that Instance in the test Instance set or ARFF file.
+* `observed_category` - integer representing the category number of the observed value (will not be available if observed value is unknown)
+* `observed_value` - the observed outcome feature for this Instance
+* `predicted_category` - integer representing the category number of the predicted value
+* `predicted_value` - the predicted outcome feature for this Instance
+* `error` - this will be `True` if the predicted value differs from the observed value. Therefore, this will be unavaialble if the observed value is unknown.
+* `probability` - the probability with which the classifier believes the predicted value to be correct.
