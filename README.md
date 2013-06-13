@@ -1,17 +1,19 @@
 WekaPy v1.1
 =================
 
-A simple Python module to provide a wrapper for some of the basic functionality of the Weka toolkit.
+A simple Python module to provide a wrapper for some of the basic functionality of the Weka toolkit. The project focuses on the *classification* side of Weka, and does not consider clustering, distributions or any visualisation functions at this stage.
 
-Please note this module is in very early stages of development and probably will not work in some cases.
+Weka is a machine learning tool, allowing you to classify data based on a set of its attributes and for generating predictions for unseen feature instances.
+
+Please note that this project is in very early stages of development and probably will not work in some cases.
 
 **Prerequisites:**
 * wekapy.py (from this repo)
 * Working Python installation
 * Working Java installation
 * weka.jar
-    * Download the JAR file from [their website](http://www.cs.waikato.ac.nz/ml/weka/downloading.html)
-    * Place the `weka.jar` file in your system's Java classpath or in your project's directory
+    * Download the JAR file from [Weka's website](http://www.cs.waikato.ac.nz/ml/weka/downloading.html)
+    * Place the `weka.jar` file in your system's Java classpath or in your project's directory (or, at least, somewhere you can import it into your project from)
 
 **Current features:**
 * Create a classifier instance
@@ -23,6 +25,12 @@ Please note this module is in very early stages of development and probably will
     * Provide an ARFF file containing the instances you wish to test on the trained model
     * Or, provide a list of Instance objects
     * Generates a list of Prediction objects which can then be retrieved from the Model object
+* Save / load models
+    * Save a model trained using WekaPy
+    * Load a pre-trained model (from Weka, previous uses of WekaPy, etc.)
+* Exporting data to ARFF format
+    * WekaPy can generate ARFF files for your training and/or test data
+    * Useful on its own if you'd rather use the GUI for making classifications
 
 Example usage
 ---------------
