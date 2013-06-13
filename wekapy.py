@@ -1,8 +1,29 @@
+# Copyright 2013 Will Webberley.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import subprocess
 import os
 import time
 import uuid
 
+# Prediction class
+# 
+# Used internally and externally to WekaPy to represent a Prediction made as
+# a result of running test data through a trained classifier.
+# Each prediction effectively represents the classification of a set of instances.
 class Prediction:
     def __init__(self, index, observed_1, observed_2, pred_1, pred_2, error, prob):
         self.index = int(index)
@@ -17,18 +38,37 @@ class Prediction:
         return_s = return_s+"observed: "+str(self.observed_value)+"\tpredicted: "+str(self.predicted_value)+"\tprob: "+str(self.probability)
         return return_s
 
+
+# Feature class
+#
+# Used internally and externally to represent a feature of data.
+# Each feature should contain a name and a value (for example, name = 'daylight_hours', value = 10)
+# possible_values should be represented by a String type object indicating the possible feature values
+# e.g. real, {true, false}, {0,1,2}, {tom, dick, harry}, etc.
 class Feature:
     def __init__(self, name = None, value = None, possible_values=None):
         self.name = name
         self.value = value
         self.possible_values = possible_values
         
+
+# Instance class
+#
+# Used internally and externally to represent a set of Feature objects.
+# Essentially, an Instance object just maintains a list of Features.
 class Instance:
     def __init__(self, features = None):
         self.features = features
         if features == None:
             self.features = []
  
+
+# Model class
+#
+# Used externally, and is the main class for use with this library.
+# The Model class should be instantiated as the first stage, from which it can be trained 
+# and/or tested.
+# Instantiate with a classifier_type (and any optional arguments)
 class Model:
     def __init__(self, classifier_type = None, max_memory = 1500, verbose = True):
         if classifier_type == None or not isinstance(classifier_type, str):
@@ -51,7 +91,8 @@ class Model:
                 os.makedirs(self.model_dir)
         if not os.path.exists(self.arff_dir):
                 os.makedirs(self.arff_dir)
-
+    
+    # Generate an ARFF file from a list of instances
     def create_ARFF(self,instances, type):
         output_arff = open(self.arff_dir+"/"+str(self.id)+"-"+type+".arff", "w")
         output_arff.write("@relation "+str(self.id)+"\n")
@@ -73,6 +114,8 @@ class Model:
         if type == "test":
             self.test_file = self.arff_dir+"/"+str(self.id)+"-"+type+".arff"
 
+    # Load a model, if it exists, and set this as the currently trained model for this
+    # Model instance.
     def load_model(self, model_file):
         if os.path.exists(model_file):
             self.model_file = model_file
