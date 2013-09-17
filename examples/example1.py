@@ -1,3 +1,12 @@
+# This example demonstrates:
+#   - creation of the Model object
+#   - creation of training instances of features
+#   - training a model
+#   - creation of testing instances of features
+#   - testing the tesiing instances against the trained model
+#   - accessing the predictions
+
+
 from wekapy import *
 
 # CREATE NEW MODEL INSTANCE WITH A CLASSIFIER TYPE
