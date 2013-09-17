@@ -5,6 +5,8 @@ A simple Python module to provide a wrapper for some of the basic functionality 
 
 Weka is a machine learning tool, allowing you to classify data based on a set of its attributes and for generating predictions for unseen feature instances.
 
+This module abstracts the use of ARFF files, making Weka much easier to use programmatically in Python. 
+
 Please note that this project is in very early stages of development and probably will not work in some cases.
 
 **Prerequisites:**
@@ -35,6 +37,14 @@ Please note that this project is in very early stages of development and probabl
 Example usage
 ---------------
 
+Please see the `examples/` directory for full example uses. These include:
+* Programmatically training and testing a model (`example1.py`)
+* Training and testing a model using ARFF files (`example2.py`)
+* Training and saving a model to file for testing with later (`train_save_model_example.py`)
+* Loading a trained model from file and testing against it (`load_test_model_example.py`)
+
+For more detailed documentation, please read on.
+
 The module can be very easily used as shown in the following example. The functionality is built around the `Model` class, which requires a classifier type when constructed.
 
 ```python
@@ -57,17 +67,17 @@ probability = prediction.probability
 More detailed documentation
 =========================
 
-`Model` construction
+1. `Model` construction
 -----------------------
 
-**Standard construction**
+**1.1 Standard construction**
 
 Construct the `Model` object very simply:
 ```python
 model = Model(classifier_type = "trees.J48")
 ```
 
-**Optional arguments**
+**1.2 Optional arguments**
 
 Currently, the `Model` class also supports the following additional arguments during construction:
 
@@ -85,7 +95,7 @@ For example, to instantiate the `Model` object with additional arguments, you co
 model = Model(classifier_type = "bayes.BayesNet", verbose = False, max_memory = 1000)
 ```
 
-Training the model
+2. Training the model
 ----------------------
 
 Currently, there are two methods for training the model - either through ARFF files or by providing a list of instances.
@@ -95,32 +105,45 @@ When training the model, any models trained previously with this `Model` object 
 
 You will need to provide either an ARFF file or a list of Instances in order for the train to be successful.
 
-**Using ARFF Files**
+**2.1 Using ARFF Files**
 
 Generate an ARFF file and pass this to the `train()` function:
 ```python
 model.train(training_file = "train.arff")
 ```
 
-**Using the Instance object**
+**2.2 Using the Instance object**
 
 If you would rather carry this out programmatically, then you can instead provide a list of Instance objects. 
 
-An Instance simply contains a list of Features, which can be instantiated as follows:
+An Instance simply contains a list of Features, and can be instantiated as follows:
 ```python
+instance1 = Instance()
+
 feature1 = Feature(name="num_milkshakes",value=46,possible_values="real")
 feature2 = Feature(name="is_sunny",value=True,possible_values="{False, True}")
-feature3 = Feature(name="boys_in_yard",value=True,possible_values="{False ,True}") 
+feature3 = Feature(name="boys_in_yard",value=True,possible_values="{False ,True}")
+ 
+instance1.add_feature(feature1)
+instance1.add_feature(feature2)
+instance1.add_feature(feature3)
+
+instance2  = Instance()
+...
 ```
 
-Next, create an Instance object and append your features. The final feature will be the that predictions are made against (the 'class'):
+The final feature in each instance will be the that predictions are made against (the 'class').
+
+When you've created all of your training instances, add them to your untrained model:
 ```python
-instance1 = Instance([feature1, feature2, feature3, ...])
+model.add_train_instance(instance1)
+model.add_train_instance(instance2)
+...
 ```
 
-Finally, pass a list of these Instances to the `train()` method:
+Finally, train the model:
 ```python
-model.train(instances = [instance1, instance2, ...])
+model.train()
 ```
 
 In the background, WekaPy generates an ARFF file and saves this and the trained model in its data directories. If desired, these can be found using:
@@ -129,7 +152,7 @@ training_arff = model.training_file
 trained_model = model.model_file
 ```
 
-**Optional arguments**
+** 2.3 Optional arguments**
 
 To configure the training more precisely, you can also set a different directory for the model and specify the number of cross-validation folds the training algorithm will carry out:
 * `save_as` (hidden, by default, to improve seamlessness of use)
@@ -138,41 +161,66 @@ To configure the training more precisely, you can also set a different directory
 * `folds` (`10` by default)
     * Set `folds = x` to specify the number of cross-validation folds you want the algorithm to carry out.
     * If your Instance list is short, you may need to reduce this.
+* `instances`
+    * Pass a list of instances to `train()` instead of using `add_train_instance()`, if desired.
+* `training_file`
+    * Pass a training ARFF file to `train()` instead of programmatically adding features. This method is covered in section 2.1.
 
-
-Testing with the trained model
+3. Testing with the trained model
 --------------------------------
 
 As with the training, there are two methods for testing with the model. You must provide either an ARFF file or a list of Instances for the testing to be successful.
 
-**Using ARFF files**
+**3.1 Using ARFF files**
 
 Test using your own ARFF file as follows:
 ```python
 model.test(test_file = "test.arff")
 ```
 
-**Using a list of Instances**
+**3.2 Using a list of Instances**
 
 Generate a list of Instances as described earlier. When testing, if the outcome feature is unknown, then use a `"?"` to signify this. For example:
 ```python
+test_instance1 = Instance()
+
 test_feature1 = Feature(name="num_milkshakes",value=5,possible_values="real")
 test_feature2 = Feature(name="is_sunny",value=False,possible_values="{False, True}")
 test_feature3 = Feature(name="boys_in_yard",value="?",possible_values="{False, True}")
+
+test_instance1.add_feature(test_feature1)
+test_instance1.add_feature(test_feature2)
+test_instance1.add_feature(test_feature3)
+
+test_instance2 = Instance()
+...
+```
+
+Now add the testing instances to the model and test the,=m:
+```python
+model.add_test_instance(test_instance1)
+model.add_test_instance(test_instance2)
+...
+
+model.test()
 ```
 
 As before, an ARFF file is generated and this is used to test against the model.
 
 
-**Optional arguments**
+**3.3 Optional arguments**
 
 You can specify the use of a different model for testing against, and thus skip out the `train()` section, if you desire. This could be useful if you have already used `train()` and chose to save the model elsewhere, you have trained the model using Weka's GUI, using someone else's model, etc.
 * `model_file` (`None` by default)
     * Set `model_file = "path/to/model.model"` to test with this model instead. 
     * Any models trained previously will be discarded by the current `Model` object and replaced by this one.
+* `instances`
+    * Pass a list of Instances to `test()` instead of using the `add_test_instance()` method demonstrated in 3.2.
+* `test_file`
+    * Pass a test file to `test()` as demonstrated in 3.1.
 
 
-Accessing the predictions
+4 Accessing the predictions
 --------------------------
 
 If the testing is successful, a list of Predictions will be generated, containing a Prediction object for each Instance in the test ARFF file or the list of test Instances.
@@ -184,7 +232,7 @@ for prediction in predictions:
     print prediction
 ```
 
-**Further information**
+**4.1 Further information**
 
 For each Prediction object, these fields are available:
 * `index` - integer representing the number of that Prediction. This equates to that Instance in the test Instance set or ARFF file. For example, the Prediction with `index = 1` is the prediction for the *first* instance in the test set.
