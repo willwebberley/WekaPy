@@ -196,7 +196,7 @@ test_instance2 = Instance()
 ...
 ```
 
-Now add the testing instances to the model and test the,=m:
+Now add the testing instances to the model and test them:
 ```python
 model.add_test_instance(test_instance1)
 model.add_test_instance(test_instance2)
