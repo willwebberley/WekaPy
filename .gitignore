@@ -4,3 +4,4 @@ main.py
 *.model
 .DS_Store
 *.pyc
+wekapy_data/

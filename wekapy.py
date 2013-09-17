@@ -4,18 +4,19 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# The full license text is available at <http://www.gnu.org/licenses/>.
 
 
 import subprocess
 import os
+import sys
+import traceback
 import time
 import uuid
 
@@ -61,7 +62,11 @@ class Instance:
         self.features = features
         if features == None:
             self.features = []
- 
+    def add_feature(self, feature):
+        if isinstance(feature, Feature):
+            self.features.append(feature) 
+        else:
+            raise WekapyException("Argument 'feature' must be of type Feature.")
 
 # Model class
 #
@@ -72,18 +77,18 @@ class Instance:
 class Model:
     def __init__(self, classifier_type = None, max_memory = 1500, verbose = True):
         if classifier_type == None or not isinstance(classifier_type, str):
-            print "Please provide a classifier type."
+            raise WekapyException("A classifier type is required for construction.")
             return False
         if not isinstance(max_memory, int):
-            print type(max_memory)
-            print "'max_memory' argument must be of type (int)."
+            raise WekapyException("'max_memory' argument must be of type (int).")
             return False
         self.id = uuid.uuid4()
-        self.model_dir = "wekapy/models"
-        self.arff_dir = "wekapy/arff"
+        self.model_dir = "wekapy_data/models"
+        self.arff_dir = "wekapy_data/arff"
         self.classifier = classifier_type
         self.max_memory = max_memory
         self.training_instances = []
+        self.testing_instances = []
         self.predictions = []
         self.verbose = verbose
         self.trained = False
@@ -121,7 +126,21 @@ class Model:
             self.model_file = model_file
             self.trained = True
         else:
-            raise WekapyException("Your model could not be found")
+            raise WekapyException("Your model could not be found.")
+
+    # Add a training instance to the model.
+    def add_train_instance(self, instance):
+        if isinstance(instance, Instance):
+            self.training_instances.append(instance) 
+        else:
+            raise WekapyException("Argument 'instance' must be of type Instance.")
+
+    # Add a testing instance to the model.
+    def add_test_instance(self, instance):
+        if isinstance(instance, Instance):
+            self.testing_instances.append(instance) 
+        else:
+            raise WekapyException("Argument 'instance' must be of type Instance.")
 
     # Train the model with the chosen classifier from features in an ARFF file
     def train(self, training_file = None, instances = None, save_as = None, folds = 10):
@@ -129,12 +148,22 @@ class Model:
         start_time = time.time()
         if save_as == None:
             save_as = self.model_dir+"/"+str(self.id)+".model"
-        if training_file == None and instances == None:
-            raise WekapyException("Please provide an ARFF for the training_file or a list of Instances")
-        if training_file == None:
-            self.create_ARFF(instances, "training")
-        if instances == None:
-            self.training_file = training_file
+        if len(self.training_instances) == 0: # if add_train_instance not called:
+            if training_file == None and instances == None:
+                raise WekapyException("Please provide some train instances either by naming an ARFF train_set, providing a list of Instances, or calling add_train_instance().")
+            if training_file == None:
+                self.create_ARFF(instances, "training")
+            if instances == None:
+                self.training_file = training_file
+        if len(self.training_instances) > 0: # if add_train_instance called:
+            if training_file == None and instances == None:
+                self.create_ARFF(self.training_instances, "training")
+            # Prioritise adding fetures passed at calltime
+            if training_file == None and instances is not None:
+                self.create_ARFF(instances, "training")
+            # Prioritise ARFF file passed at calltime
+            if instances == None and training_file is not None:
+                self.training_file = training_file
 
         self.model_file = save_as
         process = subprocess.Popen(["java", "-Xmx"+str(self.max_memory)+"M", "weka.classifiers."+self.classifier, "-x", str(folds),"-t", self.training_file, "-d", save_as], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -155,12 +184,20 @@ class Model:
             self.load_model(model_file)
         if not self.trained:
             raise WekapyException("The classifier has not yet been trained. Please call train() first")
-        if test_file == None and instances == None:
-            raise WekapyException("Please provide a filename for the test_set or a list of Instances")
-        if test_file == None:
-            self.create_ARFF(instances, "test")
-        if instances == None:
-            self.test_file = test_file
+        if len(self.testing_instances) == 0:
+            if test_file == None and instances == None:
+                raise WekapyException("Please provide some test instances either by naming an ARFF test_set, providing a list of Instances, or calling add_test_instance().")
+            if test_file == None:
+                self.create_ARFF(instances, "test")
+            if instances == None:
+                self.test_file = test_file
+        if len(self.testing_instances) > 0:
+            if test_file == None and instances == None:
+                self.create_ARFF(self.testing_instances, "test")
+            if test_file == None and instances is not None:
+                self.create_ARFF(instances, "test")
+            if instances == None and test_file is not None:
+                self.test_file = test_file
 
         process = subprocess.Popen(["java", "-Xmx"+str(self.max_memory)+"M", "weka.classifiers."+self.classifier, "-T", self.test_file, "-l", self.model_file, "-p", "0"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, process_error = process.communicate()
@@ -193,5 +230,9 @@ class Model:
         if self.verbose: print "Testing complete (time taken = %.2fs)." % (end_time-start_time) 
         return instance_predictions
 
+
 class WekapyException(Exception):
-    pass
+    def __init__(self, message):
+        self.message = message
+    def __str__(self):
+        return self.message
