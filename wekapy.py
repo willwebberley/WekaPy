@@ -79,6 +79,7 @@ class Instance:
         else:
             raise WekapyException("Argument 'feature' must be of type Feature.")
 
+
 # Filter class
 #
 # Used to filter/preprocess data using one of the weka.filters classes. 
@@ -104,7 +105,6 @@ class Filter:
         options = ["java", "-Xmx"+str(self.max_memory)+"M"]
         options.extend(filter_options)
         options.extend(["-i", input_file_name, "-o", output_file, "-c", class_column])
-        print options
         process_output, run_time = run_process(options)
         if self.verbose: print "Filtering complete (time taken = %.2fs)." % (run_time)
         return output_file
