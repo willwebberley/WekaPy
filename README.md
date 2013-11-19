@@ -33,6 +33,9 @@ Please note that this project is in very early stages of development and probabl
 * Exporting data to ARFF format
     * WekaPy can generate ARFF files for your training and/or test data
     * Useful on its own if you'd rather use the GUI for making classifications
+* Filter data 
+    * WekaPy can be used to filter input data prior to training/testing models
+    * Can use any of the weka.filters classes to filter specified input data
 
 Example usage
 ---------------
@@ -42,6 +45,7 @@ Please see the `examples/` directory for full example uses. These include:
 * Training and testing a model using ARFF files (`example2.py`)
 * Training and saving a model to file for testing with later (`train_save_model_example.py`)
 * Loading a trained model from file and testing against it (`load_test_model_example.py`)
+* Filtering an input data set (`filter_data_example.py`)
 
 For more detailed documentation, please read on.
 
@@ -242,3 +246,10 @@ For each Prediction object, these fields are available:
 * `predicted_value` - the predicted outcome feature for this Instance
 * `error` - this will be `True` if the predicted value differs from the observed value. Therefore, this will be unavaialble if the observed value is unknown.
 * `probability` - the probability with which the classifier believes the predicted value to be correct.
+
+5 Filtering Input data
+----------------------
+
+Occasionally it may be necessary to carry out some filtering on input data prior to training/testing a model. For example, it may be necessary to reduce the number of attributes in the input data, or split the data into training/testing instances.
+
+

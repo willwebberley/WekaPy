@@ -1,4 +1,5 @@
-# Copyright 2013 Will Webberley.
+# Portions of this software Copyright 2013 Will Webberley
+# Portions of this software Copyright 2013 Martin Chorley
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +16,20 @@
 
 import subprocess
 import os
-import sys
-import traceback
 import time
 import uuid
+import random
+
+def run_process(options):
+    start_time = time.time()
+    process = subprocess.Popen(options, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process_output, process_error = process.communicate()
+    if "Exception" in process_error:
+        for line in process_error.split("\n"):
+            if "Exception" in line:
+                raise WekapyException(line.split(' ',1)[1])
+    end_time = time.time()
+    return process_output, end_time-start_time 
 
 # Prediction class
 # 
@@ -68,6 +79,65 @@ class Instance:
         else:
             raise WekapyException("Argument 'feature' must be of type Feature.")
 
+# Filter class
+#
+# Used to filter/preprocess data using one of the weka.filters classes. 
+class Filter:
+    def __init__(self, filter_type=None, max_memory=1500, verbose=True):
+        if not isinstance(max_memory, int):
+            raise WekapyException("'max_memory' argument must be of type (int).")
+            return False
+        self.id = uuid.uuid4()
+        self.input_dir = "wekapy/input"
+        self.output_dir = "wekapy_data/filtered_input"
+        self.verbose = verbose
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        if not os.path.exists(self.input_dir):
+            os.makedirs(self.input_dir)
+
+    def filter(self, filter_type=None, input_file_name=None, output_file=None, class_column="last"):
+        if filter_type is None or not isinstance(filter_type, str):
+            raise WekapyException("A filter type is required")
+            return False
+        if input_file_name is None:
+            raise WekapyException("An input file is needed for filtering")
+            return False
+        else:
+            input_file = os.path.join(self.input_dir, input_file_name)
+        if output_file is None:
+            output_file = os.path.join(self.output_dir, "%s.arff" % (self.filter))
+        if self.verbose: print "Filtering input data..."
+        process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters."+self.filter, "-i", input_file, "-o", output_file, "-c", class_column])
+        if self.verbose: print "Filtering complete (time taken = %.2fs)." % (run_time)
+
+    def split(self, input_file_name=None, training_percentage=67, randomise=True, seed=None):
+        if input_file_name is None:
+            raise WekapyException("An input file is needed for filtering")
+            return False
+        else:
+            input_file = os.path.join(self.input_dir, input_file_name)
+        if not isinstance(training_percentage, int):
+            raise WekapyException("'training_percentage' argument must be of type (int).")
+            return False
+        if randomise == True and seed is None:
+            seed = random.randint(0,1000)
+        if randomise == True:
+            if self.verbose: print "Randomising data order..."
+            output_file = os.path.join(self.output_dir, "%s_randomised.arff" % (input_file_name.rstrip(".arff")))
+            process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.Randomize", "-S", seed, "-i", input_file, "-o", output_file])
+            input_file = output_file
+            if self.verbose: print "Randomisation complete (time taken = %.2fs)." % (run_time)
+        if self.verbose: print "Beginning split...\nCreating training set..."
+        output_file = "%s_training.arff" % (input_file.rstrip(".arff"))
+        process_output, run_time_training = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", training_percentage, "-i", input_file, "-o", output_file])
+        if self.verbose: print "Creating testing set..."
+        output_file = "%s_testing.arff" % (input_file.rstrip(".arff"))
+        process_output, run_time_testing = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", training_percentage, "-V", "-i", input_file, "-o", output_file])    
+        if self.verbose: print "Split complete (time taken = %.2fs)." % (run_time_training+run_time_testing)
+
+
+
 # Model class
 #
 # Used externally, and is the main class for use with this library.
@@ -98,8 +168,8 @@ class Model:
                 os.makedirs(self.arff_dir)
     
     # Generate an ARFF file from a list of instances
-    def create_ARFF(self,instances, type):
-        output_arff = open(self.arff_dir+"/"+str(self.id)+"-"+type+".arff", "w")
+    def create_ARFF(self, instances, type):
+        output_arff = open(os.path.join(self.arff_dir, "%s-%s.arff" %(str(self.id), type)), "w")
         output_arff.write("@relation "+str(self.id)+"\n")
         for i, instance in enumerate(instances):
             if i == 0:
@@ -145,7 +215,6 @@ class Model:
     # Train the model with the chosen classifier from features in an ARFF file
     def train(self, training_file = None, instances = None, save_as = None, folds = 10):
         if self.verbose: print "Training your classifier..."
-        start_time = time.time()
         if save_as == None:
             save_as = self.model_dir+"/"+str(self.id)+".model"
         if len(self.training_instances) == 0: # if add_train_instance not called:
@@ -166,15 +235,9 @@ class Model:
                 self.training_file = training_file
 
         self.model_file = save_as
-        process = subprocess.Popen(["java", "-Xmx"+str(self.max_memory)+"M", "weka.classifiers."+self.classifier, "-x", str(folds),"-t", self.training_file, "-d", save_as], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        process_output, process_error = process.communicate()
-        if "Exception" in process_error:
-            for line in process_error.split("\n"):
-                if "Exception" in line:
-                    raise WekapyException(line.split(' ',1)[1])
-        end_time = time.time()
+        process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.classifiers."+self.classifier, "-x", str(folds),"-t", self.training_file, "-d", save_as])
         self.trained = True
-        if self.verbose: print "Training complete (time taken = %.2fs)." % (end_time-start_time)
+        if self.verbose: print "Training complete (time taken = %.2fs)." % (run_time)
 
     # Generate predictions from the trained model from test features in an ARFF file
     def test(self, test_file = None, instances = None, model_file = None):       
@@ -199,14 +262,9 @@ class Model:
             if instances == None and test_file is not None:
                 self.test_file = test_file
 
-        process = subprocess.Popen(["java", "-Xmx"+str(self.max_memory)+"M", "weka.classifiers."+self.classifier, "-T", self.test_file, "-l", self.model_file, "-p", "0"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, process_error = process.communicate()
-        if "Exception" in process_error:
-            for line in process_error.split("\n"):
-                if "Exception" in line:
-                    raise WekapyException(line.split(' ',1)[1])
+        process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.classifiers."+self.classifier, "-T", self.test_file, "-l", self.model_file, "-p", "0"])
 
-        lines = output.split("\n")
+        lines = process_output.split("\n")
         instance_predictions = []
         for line in lines:
             pred = line.split()
