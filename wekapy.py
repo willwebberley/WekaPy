@@ -83,18 +83,12 @@ class Instance:
 #
 # Used to filter/preprocess data using one of the weka.filters classes. 
 class Filter:
-    def __init__(self, filter_type=None, max_memory=1500, verbose=True):
+    def __init__(self, max_memory=1500, verbose=True):
         if not isinstance(max_memory, int):
             raise WekapyException("'max_memory' argument must be of type (int).")
             return False
         self.id = uuid.uuid4()
-        self.input_dir = "wekapy/input"
-        self.output_dir = "wekapy_data/filtered_input"
         self.verbose = verbose
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-        if not os.path.exists(self.input_dir):
-            os.makedirs(self.input_dir)
 
     def filter(self, filter_type=None, input_file_name=None, output_file=None, class_column="last"):
         if filter_type is None or not isinstance(filter_type, str):
@@ -103,20 +97,17 @@ class Filter:
         if input_file_name is None:
             raise WekapyException("An input file is needed for filtering")
             return False
-        else:
-            input_file = os.path.join(self.input_dir, input_file_name)
         if output_file is None:
-            output_file = os.path.join(self.output_dir, "%s.arff" % (self.filter))
+            output_file = "%s-filtered.arff" % (input_file_name.rstrip(".arff"))
         if self.verbose: print "Filtering input data..."
-        process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters."+self.filter, "-i", input_file, "-o", output_file, "-c", class_column])
+        process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters."+self.filter, "-i", input_file_name, "-o", output_file, "-c", class_column])
         if self.verbose: print "Filtering complete (time taken = %.2fs)." % (run_time)
+        return output_file
 
     def split(self, input_file_name=None, training_percentage=67, randomise=True, seed=None):
         if input_file_name is None:
             raise WekapyException("An input file is needed for filtering")
             return False
-        else:
-            input_file = os.path.join(self.input_dir, input_file_name)
         if not isinstance(training_percentage, int):
             raise WekapyException("'training_percentage' argument must be of type (int).")
             return False
@@ -124,15 +115,15 @@ class Filter:
             seed = random.randint(0,1000)
         if randomise == True:
             if self.verbose: print "Randomising data order..."
-            output_file = os.path.join(self.output_dir, "%s_randomised.arff" % (input_file_name.rstrip(".arff")))
-            process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.Randomize", "-S", seed, "-i", input_file, "-o", output_file])
+            output_file = "%s_randomised.arff" % (input_file_name.rstrip(".arff"))
+            process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.Randomize", "-S", seed, "-i", input_file_name, "-o", output_file])
             input_file = output_file
             if self.verbose: print "Randomisation complete (time taken = %.2fs)." % (run_time)
         if self.verbose: print "Beginning split...\nCreating training set..."
-        output_file = "%s_training.arff" % (input_file.rstrip(".arff"))
+        output_file = "%s-training.arff" % (input_file.rstrip(".arff"))
         process_output, run_time_training = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", training_percentage, "-i", input_file, "-o", output_file])
         if self.verbose: print "Creating testing set..."
-        output_file = "%s_testing.arff" % (input_file.rstrip(".arff"))
+        output_file = "%s-testing.arff" % (input_file.rstrip(".arff"))
         process_output, run_time_testing = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", training_percentage, "-V", "-i", input_file, "-o", output_file])    
         if self.verbose: print "Split complete (time taken = %.2fs)." % (run_time_training+run_time_testing)
 
