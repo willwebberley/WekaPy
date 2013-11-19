@@ -87,11 +87,12 @@ class Filter:
         if not isinstance(max_memory, int):
             raise WekapyException("'max_memory' argument must be of type (int).")
             return False
+        self.max_memory = max_memory
         self.id = uuid.uuid4()
         self.verbose = verbose
 
-    def filter(self, filter_type=None, input_file_name=None, output_file=None, class_column="last"):
-        if filter_type is None or not isinstance(filter_type, str):
+    def filter(self, filter_options=None, input_file_name=None, output_file=None, class_column="last"):
+        if filter_options is None:
             raise WekapyException("A filter type is required")
             return False
         if input_file_name is None:
@@ -100,7 +101,11 @@ class Filter:
         if output_file is None:
             output_file = "%s-filtered.arff" % (input_file_name.rstrip(".arff"))
         if self.verbose: print "Filtering input data..."
-        process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters."+self.filter, "-i", input_file_name, "-o", output_file, "-c", class_column])
+        options = ["java", "-Xmx"+str(self.max_memory)+"M"]
+        options.extend(filter_options)
+        options.extend(["-i", input_file_name, "-o", output_file, "-c", class_column])
+        print options
+        process_output, run_time = run_process(options)
         if self.verbose: print "Filtering complete (time taken = %.2fs)." % (run_time)
         return output_file
 
@@ -115,16 +120,16 @@ class Filter:
             seed = random.randint(0,1000)
         if randomise == True:
             if self.verbose: print "Randomising data order..."
-            output_file = "%s_randomised.arff" % (input_file_name.rstrip(".arff"))
-            process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.Randomize", "-S", seed, "-i", input_file_name, "-o", output_file])
-            input_file = output_file
+            output_file = "%s-randomised.arff" % (input_file_name.rstrip(".arff"))
+            process_output, run_time = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.Randomize", "-S", str(seed), "-i", input_file_name, "-o", output_file])
+            input_file_name = output_file
             if self.verbose: print "Randomisation complete (time taken = %.2fs)." % (run_time)
         if self.verbose: print "Beginning split...\nCreating training set..."
-        output_file = "%s-training.arff" % (input_file.rstrip(".arff"))
-        process_output, run_time_training = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", training_percentage, "-i", input_file, "-o", output_file])
+        output_file = "%s-training.arff" % (input_file_name.rstrip(".arff"))
+        process_output, run_time_training = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", str(training_percentage), "-V", "-i", input_file_name, "-o", output_file])
         if self.verbose: print "Creating testing set..."
-        output_file = "%s-testing.arff" % (input_file.rstrip(".arff"))
-        process_output, run_time_testing = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", training_percentage, "-V", "-i", input_file, "-o", output_file])    
+        output_file = "%s-testing.arff" % (input_file_name.rstrip(".arff"))
+        process_output, run_time_testing = run_process(["java", "-Xmx"+str(self.max_memory)+"M", "weka.filters.unsupervised.instance.RemovePercentage", "-P", str(training_percentage), "-i", input_file_name, "-o", output_file])    
         if self.verbose: print "Split complete (time taken = %.2fs)." % (run_time_training+run_time_testing)
 
 
