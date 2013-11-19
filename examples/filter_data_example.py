@@ -9,7 +9,7 @@ from wekapy import *
 data_filter = Filter()
 
 # filter the input data
-filtered_file = data_filter.filter(filter_type=["weka.filters.supervised.attribute.AttributeSelection", "-E", "weka.attributeSelection.CfsSubsetEval ", "-S", "weka.attributeSelection.BestFirst", "-D", "1", "-N", "5"], input_file_name="filter_test.arff")
+filtered_file = data_filter.filter(filter_options=["weka.filters.supervised.attribute.AddClassification", "-W", "weka.classifiers.rules.ZeroR "], input_file_name="filter_test.arff")
 
 # create a testing/training split
 data_filter.split(input_file_name=filtered_file)
