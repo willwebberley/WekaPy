@@ -1,11 +1,11 @@
-WekaPy v1.2.1
+WekaPy v1.3.0
 =================
 
 A simple Python module to provide a wrapper for some of the basic functionality of the Weka toolkit. The project focuses on the *classification* side of Weka, and does not consider clustering, distributions or any visualisation functions at this stage.
 
 Weka is a machine learning tool, allowing you to classify data based on a set of its attributes and for generating predictions for unseen feature instances.
 
-This module abstracts the use of ARFF files, making Weka much easier to use programmatically in Python. 
+This module abstracts the use of ARFF files, making Weka much easier to use programmatically in Python.
 
 Please note that this project is in very early stages of development and probably will not work in some cases.
 
@@ -33,7 +33,7 @@ Please note that this project is in very early stages of development and probabl
 * Exporting data to ARFF format
     * WekaPy can generate ARFF files for your training and/or test data
     * Useful on its own if you'd rather use the GUI for making classifications
-* Filter data 
+* Filter data
     * WekaPy can be used to filter input data prior to training/testing models
     * Can use any of the weka.filters classes to filter specified input data
 
@@ -118,7 +118,7 @@ model.train(training_file = "train.arff")
 
 **2.2 Using the Instance object**
 
-If you would rather carry this out programmatically, then you can instead provide a list of Instance objects. 
+If you would rather carry this out programmatically, then you can instead provide a list of Instance objects.
 
 An Instance simply contains a list of Features, and can be instantiated as follows:
 ```python
@@ -127,7 +127,7 @@ instance1 = Instance()
 feature1 = Feature(name="num_milkshakes",value=46,possible_values="real")
 feature2 = Feature(name="is_sunny",value=True,possible_values="{False, True}")
 feature3 = Feature(name="boys_in_yard",value=True,possible_values="{False ,True}")
- 
+
 instance1.add_feature(feature1)
 instance1.add_feature(feature2)
 instance1.add_feature(feature3)
@@ -216,7 +216,7 @@ As before, an ARFF file is generated and this is used to test against the model.
 
 You can specify the use of a different model for testing against, and thus skip out the `train()` section, if you desire. This could be useful if you have already used `train()` and chose to save the model elsewhere, you have trained the model using Weka's GUI, using someone else's model, etc.
 * `model_file` (`None` by default)
-    * Set `model_file = "path/to/model.model"` to test with this model instead. 
+    * Set `model_file = "path/to/model.model"` to test with this model instead.
     * Any models trained previously will be discarded by the current `Model` object and replaced by this one.
 * `instances`
     * Pass a list of Instances to `test()` instead of using the `add_test_instance()` method demonstrated in 3.2.
@@ -251,5 +251,3 @@ For each Prediction object, these fields are available:
 ----------------------
 
 Occasionally it may be necessary to carry out some filtering on input data prior to training/testing a model. For example, it may be necessary to reduce the number of attributes in the input data, or split the data into training/testing instances.
-
-
