@@ -1,4 +1,4 @@
-WekaPy v1.3.0
+WekaPy v1.3.1
 =================
 
 A simple Python module to provide a wrapper for some of the basic functionality of the Weka toolkit. The project focuses on the *classification* side of Weka, and does not consider clustering, distributions or any visualisation functions at this stage.
@@ -9,8 +9,10 @@ This module abstracts the use of ARFF files, making Weka much easier to use prog
 
 Please note that this project is in very early stages of development and probably will not work in some cases.
 
+**Installation:**
+`pip install wekapy`
+
 **Prerequisites:**
-* wekapy.py (from this repo)
 * Working Python installation
 * Working Java installation
 * weka.jar

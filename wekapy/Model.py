@@ -1,175 +1,15 @@
-# Portions of this software Copyright 2017 Faiz Siddiqui
-# Portions of this software Copyright 2013 Will Webberley
-# Portions of this software Copyright 2013 Martin Chorley
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# The full license text is available at <http://www.gnu.org/licenses/>.
-
-
-import subprocess
-import os
-import time
-import uuid
-import random
-
-
-def decode_data(data):
-    return data.decode('utf-8').strip()
-
-
-def run_process(options):
-    start_time = time.time()
-    process = subprocess.Popen(options, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    process_output, process_error = map(decode_data, process.communicate())
-    if any(word in process_error for word in ["Exception", "Error"]):
-        for line in process_error.split("\n"):
-            if any(word in line for word in ["Exception", "Error"]):
-                raise WekapyException(line.split(' ', 1)[1])
-    end_time = time.time()
-    return process_output, end_time - start_time
-
-
-# Prediction class
-#
-# Used internally and externally to WekaPy to represent a Prediction made as
-# a result of running test data through a trained classifier.
-# Each prediction effectively represents the classification of a set of instances.
-class Prediction:
-    def __init__(self, index, observed_1, observed_2, pred_1, pred_2, error, prob):
-        self.index = int(index)
-        self.observed_category = int(observed_1)
-        self.observed_value = observed_2
-        self.predicted_category = int(pred_1)
-        self.predicted_value = pred_2
-        self.error = bool(error)
-        self.probability = float(prob)
-
-    def __str__(self):
-        return "{}:\tobserved: {}\tpredicted: {}\tprob: {}".format(str(self.index), str(self.observed_value),
-                                                                   str(self.predicted_value), str(self.probability))
-
-
-# Feature class
-#
-# Used internally and externally to represent a feature of data.
-# Each feature should contain a name and a value (for example, name = 'daylight_hours', value = 10)
-# possible_values should be represented by a String type object indicating the possible feature values
-# e.g. numeric, <nominal-specification>, string, date [<date-format>] etc.
-class Feature:
-    def __init__(self, name=None, value=None, possible_values=None):
-        self.name = name
-        self.value = value
-        self.possible_values = possible_values
-
-
-# Instance class
-#
-# Used internally and externally to represent a set of Feature objects.
-# Essentially, an Instance object just maintains a list of Features.
-class Instance:
-    def __init__(self, features=None):
-        self.features = features
-        if features is None:
-            self.features = []
-
-    def add_feature(self, feature):
-        if isinstance(feature, Feature):
-            self.features.append(feature)
-        else:
-            raise WekapyException("Argument 'feature' must be of type Feature.")
-
-    def add_features(self, features_list):
-        for feature in features_list:
-            if isinstance(feature, Feature):
-                self.features.append(feature)
-            else:
-                raise WekapyException("Argument 'feature' must be of type Feature.")
-
-
-# Filter class
-#
-# Used to filter/pre-process data using one of the weka.filters classes.
-class Filter:
-    def __init__(self, max_memory=1500, classpath=None, verbose=False):
-        if not isinstance(max_memory, int):
-            raise WekapyException("'max_memory' argument must be of type (int).")
-        self.classpath = classpath
-        self.max_memory = max_memory
-        self.id = uuid.uuid4()
-        self.verbose = verbose
-
-    def filter(self, filter_options=None, input_file_name=None, output_file=None, class_column="last"):
-        if filter_options is None:
-            raise WekapyException("A filter type is required")
-        if input_file_name is None:
-            raise WekapyException("An input file is needed for filtering")
-        if output_file is None:
-            output_file = "{}-filtered.arff".format(str(input_file_name.rstrip(".arff")))
-        if self.verbose:
-            print("Filtering input data...")
-        options = ["java", "-Xmx{}M".format(str(self.max_memory))]
-        if self.classpath is not None:
-            options.extend(["-cp", self.classpath])
-        options.extend(filter_options)
-        options.extend(["-i", input_file_name, "-o", output_file, "-c", class_column])
-        process_output, run_time = run_process(options)
-        if self.verbose:
-            print("Filtering complete (time taken = {:.2f}s)".format(run_time))
-        return output_file
-
-    def split(self, input_file_name=None, training_percentage=67, randomise=True, seed=None):
-        if input_file_name is None:
-            raise WekapyException("An input file is needed for filtering")
-        if not isinstance(training_percentage, int):
-            raise WekapyException("'training_percentage' argument must be of type (int).")
-        options = ["java", "-Xmx{}M".format(str(self.max_memory))]
-        if self.classpath is not None:
-            options.extend(["-cp", self.classpath])
-        if randomise is True and seed is None:
-            seed = random.randint(0, 1000)
-        if randomise is True:
-            if self.verbose:
-                print("Randomising data order...")
-            output_file = "{}-randomised.arff".format(str(input_file_name.rstrip(".arff")))
-            options.extend(
-                ["weka.filters.unsupervised.instance.Randomize", "-S", str(seed), "-i", input_file_name, "-o",
-                 output_file])
-            process_output, run_time = run_process(options)
-            input_file_name = output_file
-            if self.verbose:
-                print("Randomisation complete (time taken = {:.2f}s).".format(run_time))
-        if self.verbose:
-            print("Beginning split...\nCreating training set...")
-        output_file = "{}-training.arff".format(str(input_file_name.rstrip(".arff")))
-        options.extend(
-            ["weka.filters.unsupervised.instance.RemovePercentage", "-P", str(training_percentage), "-V", "-i",
-             input_file_name, "-o", output_file])
-        process_output, run_time_training = run_process(options)
-        if self.verbose:
-            print("Creating testing set...")
-        output_file = "{}-testing.arff".format(str(input_file_name.rstrip(".arff")))
-        options.extend(["weka.filters.unsupervised.instance.RemovePercentage", "-P", str(training_percentage), "-i",
-                        input_file_name, "-o", output_file])
-        process_output, run_time_testing = run_process(options)
-        if self.verbose:
-            print("Split complete (time taken = {:.2f}s).".format(run_time_training + run_time_testing))
-
-
 # Model class
 #
 # Used externally, and is the main class for use with this library.
 # The Model class should be instantiated as the first stage, from which it can be trained
 # and/or tested.
 # Instantiate with a classifier_type (and any optional arguments)
+
+from . import Helpers
+from . import WekapyException
+import os
+import uuid
+
 class Model:
     def __init__(self, classifier_type=None, max_memory=1500, classpath=None, verbose=False):
         if classifier_type is None or not isinstance(classifier_type, str):
@@ -328,11 +168,3 @@ class Model:
         if self.verbose:
             print("Testing complete (time taken = {:.2f}s).".format(self.time_taken))
         return instance_predictions
-
-
-class WekapyException(Exception):
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return self.message

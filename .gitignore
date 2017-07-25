@@ -5,3 +5,4 @@ main.py
 .DS_Store
 *.pyc
 wekapy_data/
+dist/
