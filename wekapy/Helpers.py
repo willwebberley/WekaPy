@@ -1,3 +1,4 @@
+from wekapy.WekaPyException import WekaPyException
 import subprocess
 import time
 
@@ -13,6 +14,6 @@ def run_process(options):
     if any(word in process_error for word in ["Exception", "Error"]):
         for line in process_error.split("\n"):
             if any(word in line for word in ["Exception", "Error"]):
-                raise WekapyException(line.split(' ', 1)[1])
+                raise WekaPyException(line.split(' ', 1)[1])
     end_time = time.time()
     return process_output, end_time - start_time

@@ -5,6 +5,7 @@
 # possible_values should be represented by a String type object indicating the possible feature values
 # e.g. numeric, <nominal-specification>, string, date [<date-format>] etc.
 
+
 class Feature:
     def __init__(self, name=None, value=None, possible_values=None):
         self.name = name

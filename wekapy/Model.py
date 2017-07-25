@@ -5,17 +5,20 @@
 # and/or tested.
 # Instantiate with a classifier_type (and any optional arguments)
 
-from . import Helpers
-from . import WekapyException
+from wekapy.Prediction import Prediction
+from wekapy.Instance import Instance
+from wekapy.Helpers import run_process
+from wekapy.WekaPyException import WekaPyException
 import os
 import uuid
+
 
 class Model:
     def __init__(self, classifier_type=None, max_memory=1500, classpath=None, verbose=False):
         if classifier_type is None or not isinstance(classifier_type, str):
-            raise WekapyException("A classifier type is required for construction.")
+            raise WekaPyException("A classifier type is required for construction.")
         if not isinstance(max_memory, int):
-            raise WekapyException("'max_memory' argument must be of type (int).")
+            raise WekaPyException("'max_memory' argument must be of type (int).")
         self.id = uuid.uuid4()
         self.model_dir = "wekapy_data/models"
         self.arff_dir = "wekapy_data/arff"
@@ -65,21 +68,21 @@ class Model:
             self.model_file = model_file
             self.trained = True
         else:
-            raise WekapyException("Your model could not be found.")
+            raise WekaPyException("Your model could not be found.")
 
     # Add a training instance to the model.
     def add_train_instance(self, instance):
         if isinstance(instance, Instance):
             self.training_instances.append(instance)
         else:
-            raise WekapyException("Argument 'instance' must be of type Instance.")
+            raise WekaPyException("Argument 'instance' must be of type Instance.")
 
     # Add a testing instance to the model.
     def add_test_instance(self, instance):
         if isinstance(instance, Instance):
             self.testing_instances.append(instance)
         else:
-            raise WekapyException("Argument 'instance' must be of type Instance.")
+            raise WekaPyException("Argument 'instance' must be of type Instance.")
 
     # Train the model with the chosen classifier from features in an ARFF file
     def train(self, training_file=None, instances=None, save_as=None, folds=10):
@@ -89,7 +92,7 @@ class Model:
             save_as = self.model_dir + "/" + str(self.id) + ".model"
         if len(self.training_instances) == 0:  # if add_train_instance not called:
             if training_file is None and instances is None:
-                raise WekapyException(
+                raise WekaPyException(
                     "Please provide some train instances either by naming an ARFF train_set, providing a list of Instances, or calling add_train_instance().")
             if training_file is None:
                 self.create_arff(instances, "training")
@@ -123,10 +126,10 @@ class Model:
         if model_file is not None:
             self.load_model(model_file)
         if not self.trained:
-            raise WekapyException("The classifier has not yet been trained. Please call train() first")
+            raise WekaPyException("The classifier has not yet been trained. Please call train() first")
         if len(self.testing_instances) == 0:
             if test_file is None and instances is None:
-                raise WekapyException(
+                raise WekaPyException(
                     "Please provide some test instances either by naming an ARFF test_set, providing a list of Instances, or calling add_test_instance().")
             if test_file is None:
                 self.create_arff(instances, "test")

@@ -1,5 +1,5 @@
 *.swp
-main.py
+test.py
 *.arff
 *.model
 .DS_Store

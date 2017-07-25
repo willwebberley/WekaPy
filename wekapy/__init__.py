@@ -14,7 +14,7 @@
 #
 # The full license text is available at <http://www.gnu.org/licenses/>.
 
-from Model import Model
-from Filter import Filter
-from Feature import Feature
-from Instance import Instance
+from wekapy.Model import Model
+from wekapy.Filter import Filter
+from wekapy.Feature import Feature
+from wekapy.Instance import Instance

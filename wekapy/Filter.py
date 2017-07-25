@@ -2,15 +2,16 @@
 #
 # Used to filter/pre-process data using one of the weka.filters classes.
 
-from . import Helpers
-from . import WekapyException
+from wekapy.Helpers import run_process
+from wekapy.WekaPyException import WekaPyException
 import uuid
 import random
+
 
 class Filter:
     def __init__(self, max_memory=1500, classpath=None, verbose=False):
         if not isinstance(max_memory, int):
-            raise WekapyException("'max_memory' argument must be of type (int).")
+            raise WekaPyException("'max_memory' argument must be of type (int).")
         self.classpath = classpath
         self.max_memory = max_memory
         self.id = uuid.uuid4()
@@ -18,9 +19,9 @@ class Filter:
 
     def filter(self, filter_options=None, input_file_name=None, output_file=None, class_column="last"):
         if filter_options is None:
-            raise WekapyException("A filter type is required")
+            raise WekaPyException("A filter type is required")
         if input_file_name is None:
-            raise WekapyException("An input file is needed for filtering")
+            raise WekaPyException("An input file is needed for filtering")
         if output_file is None:
             output_file = "{}-filtered.arff".format(str(input_file_name.rstrip(".arff")))
         if self.verbose:
@@ -37,9 +38,9 @@ class Filter:
 
     def split(self, input_file_name=None, training_percentage=67, randomise=True, seed=None):
         if input_file_name is None:
-            raise WekapyException("An input file is needed for filtering")
+            raise WekaPyException("An input file is needed for filtering")
         if not isinstance(training_percentage, int):
-            raise WekapyException("'training_percentage' argument must be of type (int).")
+            raise WekaPyException("'training_percentage' argument must be of type (int).")
         options = ["java", "-Xmx{}M".format(str(self.max_memory))]
         if self.classpath is not None:
             options.extend(["-cp", self.classpath])

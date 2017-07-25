@@ -1,4 +1,4 @@
-WekaPy v1.3.1
+WekaPy v1.3.6
 =================
 
 A simple Python module to provide a wrapper for some of the basic functionality of the Weka toolkit. The project focuses on the *classification* side of Weka, and does not consider clustering, distributions or any visualisation functions at this stage.

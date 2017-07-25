@@ -4,6 +4,7 @@
 # a result of running test data through a trained classifier.
 # Each prediction effectively represents the classification of a set of instances.
 
+
 class Prediction:
     def __init__(self, index, observed_1, observed_2, pred_1, pred_2, error, prob):
         self.index = int(index)
