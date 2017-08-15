@@ -16,14 +16,14 @@ model.load_model("/path/to/model.model")
 # CREATE TEST INSTANCES
 
 test_instance1 = Instance()
-test_instance1.add_feature(Feature(name="num_milkshakes",value=44,possible_values="real"))
-test_instance1.add_feature(Feature(name="is_sunny",value=True,possible_values="{False, True}"))
-test_instance1.add_feature(Feature(name="boys_in_yard",value="?",possible_values="{False, True}"))
+test_instance1.add_features([ Feature(name="num_milkshakes", value=44, possible_values="numeric"),
+    Feature(name="is_sunny", value=True, possible_values="{False, True}"),
+    Feature(name="boys_in_yard", value="?", possible_values="{False ,True}") ])
 
 test_instance2 = Instance()
-test_instance2.add_feature(Feature(name="num_milkshakes",value=5,possible_values="real"))
-test_instance2.add_feature(Feature(name="is_sunny",value=False,possible_values="{False, True}"))
-test_instance2.add_feature(Feature(name="boys_in_yard",value="?",possible_values="{False, True}"))
+test_instance2.add_features([ Feature(name="num_milkshakes", value=5, possible_values="numeric"),
+    Feature(name="is_sunny", value=False, possible_values="{False, True}"),
+    Feature(name="boys_in_yard", value="?", possible_values="{False ,True}") ])
 
 model.add_test_instance(test_instance1)
 model.add_test_instance(test_instance2)

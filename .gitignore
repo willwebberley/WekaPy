@@ -1,7 +1,8 @@
 *.swp
-main.py
+test.py
 *.arff
 *.model
 .DS_Store
 *.pyc
 wekapy_data/
+dist/
